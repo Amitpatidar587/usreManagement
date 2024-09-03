@@ -1,85 +1,71 @@
-import { useState, useMemo, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
+import { useState, useMemo, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select"
-import { Pagination } from "@/components/ui/pagination"
-import UserTableList from "../components/UserTableList"
-import Topbar from "../components/Topbar"
-import { ArrowUpDownIcon } from "lucide-react"
-import axios from "axios"
-import UserForm from "@/components/UserForm"
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { ArrowUpDownIcon } from "lucide-react";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import {
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@radix-ui/react-dropdown-menu";
+import { deleteUser, getAllUsersData } from "@/api/api";
+import UserCardList from "@/components/UserCardList";
 
 export default function Home() {
-  const [users, setUsers] = useState([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [sortBy, setSortBy] = useState("username")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(10)
-  const [isEditUser, setIsEditUser] = useState(false)
-  const [isDeleteDialog, setIsDeleteDialog] = useState(false)
-  const [selectedUser, setSelectedUser] = useState({})
-  const [isLoading, setIsLoading] = useState(true)
-  
-  const indexOfLastItem = currentPage * itemsPerPage
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage
+  const [users, setUsers] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("username");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(3);
+  const [isLoading, setIsLoading] = useState(true);
+
   const handlePageChange = (page) => {
-    setCurrentPage(page)
-  }
-  const handleItemsPerPageChange = (limit) => {
-    setItemsPerPage(limit)
-    setCurrentPage(1)
-  }
+    setCurrentPage(page);
+  };
 
-
-
-  const getUserData = async()=>{
-    const {data} = await axios.get(`https://apnaorganicstore.in/crud_api/users.php?search=${searchTerm}&sort_by=${sortBy}`)
-    setUsers(data)
-    setIsLoading(false)
-  }
+  const handleLimitChange = (limit) => {
+    setItemsPerPage(limit);
+  };
 
   useEffect(() => {
-    getUserData()
-  }, [searchTerm,sortBy])
-
-
-  const handleEditUser=(user)=>{
-    setSelectedUser(user)
-    setIsEditUser(true)
-  }
-
-  const handleDeleteUser=(user)=>{
-    setSelectedUser(user)
-    setIsDeleteDialog(true)
-  }
-  const confirmDelete=async()=>{
-    try {
-      const {data} = await axios.delete(`https://apnaorganicstore.in/crud_api/delete.php?id=${selectedUser.id}`)
-      console.log(data)
-      setSelectedUser({})
-    } catch (error) {
-      console.log(error)
+    async function getUsersData() {
+      let data = await getAllUsersData({
+        searchTerm,
+        sortBy,
+        sortOrder,
+        currentPage,
+        itemsPerPage,
+      });
+      setUsers(data);
+      setIsLoading(false);
+      setRender[false];
     }
-  }
+    getUsersData();
+  }, [searchTerm, sortBy, sortOrder, currentPage, itemsPerPage]);
 
-  if(isLoading){
-    return "Loading..."
+  if (isLoading) {
+    return "Loading...";
   }
 
   return (
     <div className="flex flex-col h-full">
-    
-      <main className="flex-1 p-6">
-        <div className="flex items-center justify-between mb-4">
+      <main className="flex-1 p-4">
+        <div className="flex items-center gap-2 justify-end  mb-4">
           <div className="relative w-full max-w-md">
             <div className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -87,7 +73,7 @@ export default function Home() {
               placeholder="Search users..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8"
+              className="ms-auto"
             />
           </div>
           <DropdownMenu>
@@ -97,57 +83,93 @@ export default function Home() {
                 Sort by
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent onValueChange={(value)=>setSortBy(value)} value={sortBy} align="end">
-              <DropdownMenuItem onClick={() => setSortBy("username")}>Username</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy("email")}>Email</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy("createdAt")}>Created At</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setSortBy("updatedAt")}>Updated At</DropdownMenuItem>
+            <DropdownMenuContent value={sortBy}>
+              <DropdownMenuItem value="asc" onClick={() => setSortOrder("asc")}>
+                Ascending
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                value="desc"
+                onClick={() => setSortOrder("desc")}
+              >
+                Descending
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                value="username"
+                onClick={() => setSortBy("username")}
+              >
+                username
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                value="email"
+                onClick={() => setSortBy("email")}
+              >
+                email
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        <UserTableList userData={users} handleEditUser={handleEditUser} handleDeleteUser={handleDeleteUser}/>
-        {/* <div className="flex items-center justify-between mt-4">
-          <div className="flex items-center gap-2">
-            <span>Show</span>
-            <Select
-              value={itemsPerPage.toString()}
-              onValueChange={(e) => handleItemsPerPageChange(parseInt(e.target.value))}
-            >
-              <SelectTrigger className="w-16">
-                <SelectValue>{itemsPerPage}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5</SelectItem>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
-            <span>entries</span>
-          </div>
-          <Pagination
-            currentPage={currentPage}
-            totalItems={users.length}
-            itemsPerPage={itemsPerPage}
-            onPageChange={handlePageChange}
-          />
-        </div> */}
+        <UserCardList userData={users} />
+
+        <div className="flex flex-col md:flex-row sm:flex-row gap-2  mt-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger>
+              <Button variant="outline" className="ml-4">
+                <ArrowUpDownIcon className="h-4 w-4 mr-2" />
+                {itemsPerPage} per page
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-[200px]" align="end">
+              <DropdownMenuRadioGroup value={itemsPerPage.toString()}>
+                <DropdownMenuRadioItem
+                  value="1"
+                  onClick={() => handleLimitChange(1)}
+                >
+                  1 per page
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem
+                  value="2"
+                  onClick={() => handleLimitChange(2)}
+                >
+                  2 per page
+                </DropdownMenuRadioItem>
+                <DropdownMenuRadioItem
+                  value="10"
+                  onClick={() => handleLimitChange(5)}
+                >
+                  10 per page
+                </DropdownMenuRadioItem>
+              </DropdownMenuRadioGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Pagination className="  overflow-hidden justify-center sm:pr-36">
+            <PaginationContent>
+              <PaginationItem className="hidden sm:inline-block">
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                />
+              </PaginationItem>
+              {[1, 2, 3, 4].map((pageNumber) => (
+                <PaginationItem key={pageNumber}>
+                  <PaginationLink
+                    href="#"
+                    onClick={() => handlePageChange(pageNumber)}
+                    isActive={pageNumber === currentPage}
+                  >
+                    {pageNumber}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              <PaginationItem className="hidden sm:inline-block">
+                <PaginationNext
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === 3}
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
+        </div>
       </main>
-      {isEditUser && <UserForm isUpdating={true} defaultUser={selectedUser} setIsUpdateOpen={setIsEditUser}  />}
-      <Dialog open={isDeleteDialog} onOpenChange={setIsDeleteDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Confirm Delete</DialogTitle>
-            <DialogDescription>
-            Are You Sure to Delete User ?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button onClick={confirmDelete} className='w-1/2' variant="destructive">Yes</Button>
-            <Button onClick={()=>setIsDeleteDialog(false)} className='w-1/2' >Cancel</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
-  )
+  );
 }
